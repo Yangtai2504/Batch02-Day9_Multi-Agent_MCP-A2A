@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 
-from common.llm import get_llm
+from common.llm import extract_text, get_llm
 
 # ---------------------------------------------------------------------------
 # Simulated legal knowledge base (in production, this would be a vector store)
@@ -67,6 +67,18 @@ LEGAL_KNOWLEDGE = [
             "reasonable estimate of anticipated harm. Courts will void clauses that function as "
             "penalties (Restatement (Second) of Contracts § 356). Typical NDA liquidated damages "
             "range from $10,000 to $500,000 depending on the nature of the confidential information."
+        ),
+    },
+    {
+        "id": "labor_law",
+        "keywords": ["lao động", "sa thải", "hợp đồng lao động", "labor", "termination", "employment"],
+        "text": (
+            "Theo Bộ luật Lao động Việt Nam 2019, người sử dụng lao động có thể "
+            "đơn phương chấm dứt hợp đồng trong các trường hợp: (1) người lao động "
+            "thường xuyên không hoàn thành công việc; (2) bị ốm đau, tai nạn đã điều trị "
+            "12 tháng chưa khỏi; (3) thiên tai, hỏa hoạn; (4) người lao động đủ tuổi nghỉ hưu. "
+            "Vi phạm thủ tục sa thải có thể bị buộc nhận lại người lao động và bồi thường "
+            "ít nhất 2 tháng lương theo Điều 41 BLLĐ 2019."
         ),
     },
     {
@@ -135,7 +147,23 @@ def calculate_damages(breach_type: str, contract_value: float) -> str:
     )
 
 
-TOOLS = [search_legal_database, calculate_damages]
+@tool
+def check_statute_of_limitations(case_type: str) -> str:
+    """Kiểm tra thời hiệu khởi kiện theo loại vụ án.
+
+    Args:
+        case_type: Loại vụ án (contract, tort, property, labor)
+    """
+    limits = {
+        "contract": "4 năm (UCC § 2-725)",
+        "tort": "2-3 năm tùy bang",
+        "property": "5 năm",
+        "labor": "1 năm kể từ ngày chấm dứt hợp đồng (BLLĐ 2019 Điều 190)",
+    }
+    return limits.get(case_type.lower(), "Không xác định — cần tư vấn chuyên gia pháp lý")
+
+
+TOOLS = [search_legal_database, calculate_damages, check_statute_of_limitations]
 
 QUESTION = "What are the legal consequences if a company breaches a non-disclosure agreement?"
 
@@ -177,7 +205,7 @@ async def main():
 
     if not response.tool_calls:
         print("LLM chose not to use any tools. Direct answer:")
-        print(response.content)
+        print(extract_text(response.content))
         return
 
     # --- Step 2: Execute tool calls ---
@@ -196,7 +224,7 @@ async def main():
     # --- Step 3: LLM generates final grounded answer ---
     print(">>> Step 3: LLM generating final answer with tool results...\n")
     final_response = await llm_with_tools.ainvoke(messages)
-    print(final_response.content)
+    print(extract_text(final_response.content))
 
     print()
     print("-" * 70)

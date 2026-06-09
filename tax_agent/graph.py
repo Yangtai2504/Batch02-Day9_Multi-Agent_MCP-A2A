@@ -32,6 +32,9 @@ When answering, be precise about:
 
 Always note that your response is for educational purposes and the user
 should consult a licensed attorney for specific legal advice.
+
+IMPORTANT: Trả lời ngắn gọn, súc tích trong tối đa 3-5 gạch đầu dòng.
+Tránh giải thích dài dòng — chỉ nêu những điểm pháp lý quan trọng nhất.
 """
 
 

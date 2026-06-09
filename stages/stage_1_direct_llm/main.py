@@ -13,13 +13,14 @@ import sys
 
 # Allow running directly: python stages/stage_1_direct_llm/main.py
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.stdout.reconfigure(encoding="utf-8")
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from common.llm import get_llm
 
-QUESTION = "What are the legal consequences if a company breaches a non-disclosure agreement?"
+QUESTION = "Một công ty startup tại Việt Nam vi phạm hợp đồng với đối tác nước ngoài và không nộp thuế thu nhập doanh nghiệp. Hậu quả pháp lý là gì?"
 
 
 async def main():

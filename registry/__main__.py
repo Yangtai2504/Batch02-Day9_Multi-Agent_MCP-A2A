@@ -12,6 +12,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Any
 
@@ -84,5 +85,8 @@ async def health() -> dict:
 
 
 if __name__ == "__main__":
-    logger.info("Starting Registry on port 10000")
-    uvicorn.run(app, host="0.0.0.0", port=10000, log_level="info")
+    from dotenv import load_dotenv
+    load_dotenv()
+    port = int(os.getenv("REGISTRY_PORT", "18000"))
+    logger.info("Starting Registry on port %d", port)
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

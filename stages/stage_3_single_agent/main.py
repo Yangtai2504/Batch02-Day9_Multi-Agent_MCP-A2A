@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from dotenv import load_dotenv
 from langchain_core.tools import tool
 
-from common.llm import get_llm
+from common.llm import extract_text, get_llm
 
 # ---------------------------------------------------------------------------
 # Expanded knowledge base (law + tax + compliance entries)
@@ -172,7 +172,29 @@ def check_compliance_requirements(industry: str, company_size: str) -> str:
     )
 
 
-TOOLS = [search_legal_database, calculate_penalty, check_compliance_requirements]
+@tool
+def search_case_law(keywords: str) -> str:
+    """Tìm kiếm án lệ theo từ khóa.
+
+    Args:
+        keywords: Từ khóa tìm kiếm (ví dụ: breach, negligence, contract)
+    """
+    cases = {
+        "breach": "Hadley v. Baxendale (1854) - Consequential damages must be foreseeable at time of contracting.",
+        "negligence": "Donoghue v. Stevenson (1932) - Established modern duty of care in negligence law.",
+        "contract": "Carlill v. Carbolic Smoke Ball Co (1893) - Unilateral contract offer accepted by performance.",
+        "nda": "PepsiCo Inc. v. Redmond (1995) - Trade secrets and inevitable disclosure doctrine.",
+        "privacy": "Spokeo Inc. v. Robins (2016) - Standing requires concrete injury, not just statutory violation.",
+        "tax": "Gregory v. Helvering (1935) - Substance over form doctrine in tax law.",
+    }
+    results = []
+    for key, case in cases.items():
+        if key in keywords.lower():
+            results.append(case)
+    return "\n".join(results) if results else "Không tìm thấy án lệ phù hợp"
+
+
+TOOLS = [search_legal_database, calculate_penalty, check_compliance_requirements, search_case_law]
 
 QUESTION = (
     "A tech startup with $5M revenue was caught sharing user data without consent "
@@ -227,7 +249,7 @@ async def main():
                 elif msg.type == "ai" and msg.content:
                     print(f"\n[Step {step}] FINAL ANSWER (node: {node_name})")
                     print("-" * 70)
-                    print(msg.content)
+                    print(extract_text(msg.content))
 
     print()
     print("-" * 70)
